@@ -1,30 +1,115 @@
+import {
+    Stack,
+    Flex,
+    Heading,
+    Text,
+    Button,
+    Image,
+    Badge,
+    a,
+} from "@chakra-ui/react";
 import App from "../../App";
-import {useState, useEffect,useCallback} from "react";
+import { useState, useEffect, useCallback } from "react";
 import usePlatziPunks from "../../hooks/usePlatziPunks";
-import {useWeb3React} from "@web3-react/core";
+import { useWeb3React } from "@web3-react/core";
+
 const Home = () => {
-    const active = useWeb3React();
-    const [maxSupply, setMaxSupply] = useState();
+    const [imageSrc, setImageSrc] = useState("");
+    const { active, account } = useWeb3React();
     const platziPunks = usePlatziPunks();
 
-    const getMaxSupply = useCallback(async()=>{
+    const getPlatziPunksData = useCallback(async () => {
         if (platziPunks) {
-            const result = await platziPunks.methods.maxSupply().call();
-            setMaxSupply(result);
+          const totalSupply = await platziPunks.methods.totalSupply().call();
+          const dnaPreview = await platziPunks.methods.deterministicPseudoRandomDna(totalSupply,account).call();
+          const image = await platziPunks.methods.imageByDna(dnaPreview).call();
+          setImageSrc(image);
         }
-    },[platziPunks]);
+      }, [platziPunks, account]);
+    
+      useEffect(() => {
+        getPlatziPunksData();
+      }, [getPlatziPunksData,]);
 
-
-
-    useEffect(()=> {
-        getMaxSupply();
-    },[getMaxSupply()])
-
-    if (!active) return "Conecta tu wallet"
-    return (
-        <>
-            <p>Max Supply:{maxSupply}</p>
-        </>
+    return ( 
+        <Stack align = {"center"} 
+            spacing={{base:8,md:8}}
+            direction={{base: "column-reverse",md:"row"}}>
+            <Stack flex = {1} spacing = {{base:5 ,md:10}}>
+                <Heading lineHeight={1.1}
+                fontWeight ={600}
+                fontSize={{base:"3xl",sm:"4xl",lg:"6xl"}}>
+                    <Text as = {"span"}
+                    position ={"relative"}
+                    _after={{content:"''",
+                    width:"full",
+                    height:"30%",
+                    position:"absolute",
+                    bottom:1,
+                    left:0,
+                    bg:"green.400",
+                    zIndex:-1}}>
+                    </Text >
+                    <br/>
+                    <Text as= {"span"} color = {"green.400"}>nunca pares de aprender
+                    </Text>
+                </Heading> 
+                <Text color = {"gray.500"}>
+                    Platzi punks es una coleccion de Avatares randomizados cuya metadata 
+                    esta almacenada on-chain. Poseen caracteristicas unicas y solo hay 10000
+                    en existencia
+                </Text>   
+                <Text color = {"green.500"}>
+                    Cada Platzi Punk se fenera de forma secuencual basado en tu address
+                    usa el previsualizador paraaverigual cual sera tu Platzi Punk si
+                    minteas en este momento
+                </Text>
+                <Stack spacing = {{base:4,sm:"row"}}>
+                <Button rounded={"full"}
+                size={"lg"}
+                fontWeight={"normal"}
+                px={6} 
+                colorScheme={"green"}
+                bg={"green.400"}
+                _hover={{bg:"green.500"}}
+                disabled={!platziPunks}>
+                    Obten tu Punk
+                </Button >
+                 <a href="/punks">
+                    <Button rounded={"full"} size={"lg"} fontWeight={"normal"} px={6}>
+                    Galera
+                    </Button>
+                </a>
+                </Stack>
+            </Stack>
+            <Flex flex={1} direction ="column" justify={"center"}
+            align={"center"} position={"realtive"} w={"full"}>
+            <Image src={active ? imageSrc:"https://avata    ars.io/"}/>
+            {active? (
+            <>
+            <Flex mt={2}>
+                <Badge>
+                    Next ID:
+                    <Badge ml={1} colorScheme="green">
+                    1
+                    </Badge>
+                </Badge>
+                <Badge ml={2}>
+                    Address:
+                    <Badge ml={1} colorScheme="green">
+                        0x0000...0000
+                    </Badge>
+                </Badge>
+            </Flex>
+            <Button onClick={getPlatziPunksData} mt={4}
+            size="xs" colorScheme="green">
+                Actualizar
+            </Button>
+            </>
+            ):(<Badge mt={2}>Wallet desconectado</Badge>)}
+            </Flex>
+        </Stack>
     );
-};
+}
+
 export default Home;
